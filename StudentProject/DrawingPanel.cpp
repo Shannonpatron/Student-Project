@@ -1,4 +1,3 @@
-// Implements the DrawingPanel class to manage the visual grid and simulation
 #include "DrawingPanel.h"
 #include "wx/dcbuffer.h"
 #include "wx/graphics.h"
@@ -13,7 +12,7 @@ DrawingPanel::DrawingPanel(wxWindow* parent, Settings& settingsRef)
 {
     SetBackgroundStyle(wxBG_STYLE_PAINT); // Set painting style
 
-    grid.resize(settings.gridSize, std::vector<bool>(settings.gridSize, false)); // Initialized grid with false values
+    grid.resize(settings.gridSize, std::vector<bool>(settings.gridSize, false)); // Initialize grid with false values
     ant = new LangtonsAnt(settings.gridSize / 2, settings.gridSize / 2); // Place ant in the center of the grid
 }
 
@@ -62,7 +61,7 @@ void DrawingPanel::ClearGrid()
 void DrawingPanel::OnMouseClick(wxMouseEvent& event)
 {
     wxSize size = GetSize(); // get the size of the window
-    int cellWidth = size.GetWidth() / settings.gridSize; // caluclate cell width
+    int cellWidth = size.GetWidth() / settings.gridSize; // calculate cell width
     int cellHeight = size.GetHeight() / settings.gridSize; // calculate cell height
 
     int col = event.GetX() / cellWidth; // get the clicked column

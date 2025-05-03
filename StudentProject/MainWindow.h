@@ -1,4 +1,3 @@
-// Defining the MainWindow class that handles the UI and interactions
 #pragma once
 
 #include "wx/wx.h"
@@ -9,15 +8,14 @@ class MainWindow : public wxFrame
 {
 public:
     MainWindow(); // constructor
-    ~MainWindow(); //destructor
+    ~MainWindow(); // destructor
 
 private:
     void OnPlay(wxCommandEvent& event); // Play button action
     void OnPause(wxCommandEvent& event); // Pause button action
     void OnStep(wxCommandEvent& event); // Step button action
-    void OnClear(wxCommandEvent& event); // clear grid action
-    void OnTimer(wxTimerEvent& event); // timer event
-    void OnNew(wxCommandEvent& event); // new simulation (not used yet)
+    void OnClear(wxCommandEvent& event); // Clear grid action
+    void OnTimer(wxTimerEvent& event); // Timer event
     void UpdateStatusBar(); // Update the status bar with info
 
     wxTimer* timer; // Timer for simulations steps

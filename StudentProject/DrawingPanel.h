@@ -1,4 +1,3 @@
-// Defines the DrawingPanel class for rendering the grid and simulation
 #pragma once
 #include "wx/wx.h"
 #include "Settings.h"
