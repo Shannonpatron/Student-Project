@@ -5,7 +5,7 @@
 wxBEGIN_EVENT_TABLE(DrawingPanel, wxPanel)
 EVT_PAINT(DrawingPanel::OnPaint) // Bind paint event to OnPaint method
 EVT_LEFT_DOWN(DrawingPanel::OnMouseClick) // Bind mouse click to OnMouseClick method
-wxEND_EVENT_TABLE()
+wxEND_EVENT_TABLE() 
 
 DrawingPanel::DrawingPanel(wxWindow* parent, Settings& settingsRef)
     : wxPanel(parent), settings(settingsRef)
