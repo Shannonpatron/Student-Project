@@ -1,10 +1,12 @@
-// Defining the main application class from wxWidgets
-// Inherits from wxApp and overrides OnInit to initialize the application
-#pragma once
+// App.h – This file sets up the main application class and handles startup
+
 #include "wx/wx.h"
 
+// Main application class
 class App : public wxApp
 {
 public:
-    virtual bool OnInit(); // Initialized the main window
+    // Called when the program starts
+    // I use this to create and show the main window
+    virtual bool OnInit();
 };

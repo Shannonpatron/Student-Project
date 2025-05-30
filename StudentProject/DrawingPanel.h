@@ -1,22 +1,52 @@
+// This file defines the custom panel where the grid and ant are drawn.
+// It handles drawing, simulation steps, and mouse interaction.
+
 #pragma once
+
 #include "wx/wx.h"
 #include "Settings.h"
-#include "LangtonsAnt.h"
+#include <vector>
+
+class LangtonsAnt;  // Forward declaration for the ant logic
 
 class DrawingPanel : public wxPanel
 {
 public:
-    DrawingPanel(wxWindow* parent, Settings& settings); // constructor
-    void StepSimulation(); // advances the simulation one step
-    void ClearGrid(); // clears the grid and resets the ant
+    // Constructor – takes in settings and stores a copy
+    DrawingPanel(wxWindow* parent, const Settings& settings);
+
+    ~DrawingPanel();  // Cleans up the dynamically created ant
+
+    // Moves the simulation forward by one step
+    void StepSimulation();
+
+    // Clears the grid and resets the simulation
+    void ClearGrid();
+
+    // Updates the settings when user changes them
+    void UpdateSettings(const Settings& newSettings);
+
+    // Updates the neighbor count for each cell
+    void UpdateNeighborCounts();
+
+    // Turns on/off the display of neighbor numbers
+    void SetShowNeighborCount(bool show);
 
 private:
-    void OnPaint(wxPaintEvent& event); // handles painting of the grid
-    void OnMouseClick(wxMouseEvent& event); // handles mouse click on the grid
+    Settings settings;  // Local copy of the settings
 
-    std::vector<std::vector<bool>> grid; // 2D grid of cells (true or false)
-    Settings& settings; // reference to settings (grid size, colors, etc.)
-    LangtonsAnt* ant; // the langtons ant object
+    std::vector<std::vector<bool>> grid;  // Stores the grid state (on/off cells)
+    std::vector<std::vector<int>> neighborCounts;  // Stores neighbor counts per cell
 
-    wxDECLARE_EVENT_TABLE();
+    LangtonsAnt* ant = nullptr;  // Pointer to the ant object
+
+    bool showNeighborCount = false;  // Controls whether neighbor numbers are drawn
+
+    // Handles drawing the panel when refreshed
+    void OnPaint(wxPaintEvent& event);
+
+    // Handles mouse clicks to toggle cells manually
+    void OnMouseClick(wxMouseEvent& event);
+
+    wxDECLARE_EVENT_TABLE();  // Required for custom event handling
 };

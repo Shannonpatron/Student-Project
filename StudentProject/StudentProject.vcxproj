@@ -136,6 +136,7 @@
     <ClCompile Include="DrawingPanel.cpp" />
     <ClCompile Include="LangtonsAnt.cpp" />
     <ClCompile Include="MainWindow.cpp" />
+    <ClCompile Include="SettingsDialog.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -143,6 +144,8 @@
     <ClInclude Include="LangtonsAnt.h" />
     <ClInclude Include="MainWindow.h" />
     <ClInclude Include="Settings.h" />
+    <ClInclude Include="SettingsDialog.h" />
+    <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
