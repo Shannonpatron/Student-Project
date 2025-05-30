@@ -1,8 +1,3 @@
-// Defines the Settings struct that holds configuration options for the Langton's Ant simulation, 
-// including cell colors, grid size, and simulation speed. Provides methods to load and save
-// these settings from/to a binary file.
-
-
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
@@ -28,6 +23,9 @@ struct Settings
 
     // Timer interval in milliseconds between simulation steps
     int intervalMs = 50;
+
+    // New: Show Heads Up Display (HUD) or not
+    bool ShowHUD = false;  // This will be saved and loaded via LoadSettings/SaveSettings
 
     // Return wxColour for living cells from RGBA components
     wxColour GetLivingCellColor() const
@@ -65,7 +63,7 @@ struct Settings
         std::ifstream file("settings.bin", std::ios::binary | std::ios::in);
         if (file.is_open())
         {
-            file.read((char*)this, sizeof(Settings));
+            file.read(reinterpret_cast<char*>(this), sizeof(Settings));
             file.close();
         }
     }
@@ -76,9 +74,27 @@ struct Settings
         std::ofstream file("settings.bin", std::ios::binary | std::ios::out);
         if (file.is_open())
         {
-            file.write((char*)this, sizeof(Settings));
+            file.write(reinterpret_cast<const char*>(this), sizeof(Settings));
             file.close();
         }
+    }
+
+    void ResetToDefaults()
+    {
+        livingCellRed = 128;
+        livingCellGreen = 128;
+        livingCellBlue = 128;
+        livingCellAlpha = 255;
+
+        deadCellRed = 255;
+        deadCellGreen = 255;
+        deadCellBlue = 255;
+        deadCellAlpha = 255;
+
+        gridSize = 15;
+        intervalMs = 50;
+
+        ShowHUD = false;
     }
 };
 

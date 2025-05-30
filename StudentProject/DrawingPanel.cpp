@@ -1,15 +1,20 @@
-// This file handles how the panel looks and reacts.
+// This file handles how the panel looks and reacts. 
 // It draws the grid, handles mouse clicks, and runs the simulation steps.
 
 #include "DrawingPanel.h"
 #include "wx/dcbuffer.h"
 #include "wx/graphics.h"
 #include "LangtonsAnt.h"  // Includes the ant simulation logic
+#include <fstream>
+#include <sstream>
 
-// Hook up paint and mouse click events to the corresponding functions
+
+// Paint, mouse click, and import pattern events to the corresponding functions
 wxBEGIN_EVENT_TABLE(DrawingPanel, wxPanel)
 EVT_PAINT(DrawingPanel::OnPaint)
 EVT_LEFT_DOWN(DrawingPanel::OnMouseClick)
+EVT_MENU(ID_IMPORT_PATTERN, DrawingPanel::OnImportPattern)   // Added import pattern event
+EVT_MENU(ID_SAVE_UNIVERSE, DrawingPanel::OnSaveUniverse)    // Save universe event
 wxEND_EVENT_TABLE()
 
 // Constructor – sets up grid, neighbor counts, and places the ant in the center
@@ -72,6 +77,28 @@ void DrawingPanel::OnPaint(wxPaintEvent& event)
                 dc.DrawText(text, x, y);
             }
         }
+    }
+
+    // HUD Drawing
+    if (settings.ShowHUD)  // ShowHUD controls if HUD is displayed
+    {
+        // Set font size, bold, color 
+        dc.SetFont(wxFontInfo(16).Bold());
+        dc.SetTextForeground(*wxRED);
+
+        wxString hudText;
+        // Add universe size info (grid size)
+        hudText << "Universe Size: " << settings.gridSize;
+
+        int textWidth, textHeight;
+        dc.GetTextExtent(hudText, &textWidth, &textHeight);
+
+        // Position at lower left corner, with a small margin
+        int margin = 10;
+        int x = margin;
+        int y = size.GetHeight() - textHeight - margin;
+
+        dc.DrawText(hudText, x, y);
     }
 
     delete gc;
@@ -166,3 +193,124 @@ void DrawingPanel::SetShowNeighborCount(bool show)
     showNeighborCount = show;
     Refresh(); // Redraw to reflect change
 }
+
+// Import a pattern from file and place it centered on the existing grid without resizing
+bool DrawingPanel::ImportPatternFromFile(const wxString& filename)
+{
+    std::ifstream file(filename.ToStdString());
+    if (!file.is_open())
+        return false;
+
+    std::vector<std::vector<bool>> pattern;
+    std::string line;
+    while (std::getline(file, line))
+    {
+        std::vector<bool> rowPattern;
+        for (char ch : line)
+        {
+            if (ch == '1' || ch == 'X' || ch == '*')
+                rowPattern.push_back(true);
+            else if (ch == '0' || ch == '.' || ch == ' ')
+                rowPattern.push_back(false);
+            // Ignore other characters
+        }
+        if (!rowPattern.empty())
+            pattern.push_back(rowPattern);
+    }
+    file.close();
+
+    if (pattern.empty())
+        return false;
+
+    int patternRows = static_cast<int>(pattern.size());
+    int patternCols = static_cast<int>(pattern[0].size());
+
+    int gridSize = settings.gridSize;
+
+    // Calculate top-left corner to center the pattern in the grid
+    int startRow = (gridSize - patternRows) / 2;
+    int startCol = (gridSize - patternCols) / 2;
+
+    // Clear current grid cells that will be overwritten
+    for (int r = 0; r < gridSize; ++r)
+    {
+        for (int c = 0; c < gridSize; ++c)
+        {
+            if (r >= startRow && r < startRow + patternRows &&
+                c >= startCol && c < startCol + patternCols)
+            {
+                grid[r][c] = false; // reset before importing
+            }
+        }
+    }
+
+    // Copy pattern into grid without resizing grid
+    for (int r = 0; r < patternRows; ++r)
+    {
+        for (int c = 0; c < patternCols; ++c)
+        {
+            int gridR = startRow + r;
+            int gridC = startCol + c;
+            if (gridR >= 0 && gridR < gridSize && gridC >= 0 && gridC < gridSize)
+            {
+                grid[gridR][gridC] = pattern[r][c];
+            }
+        }
+    }
+
+    UpdateNeighborCounts();
+    Refresh();
+
+    return true;
+}
+
+// Handles menu command to import a pattern
+void DrawingPanel::OnImportPattern(wxCommandEvent& event)
+{
+    wxFileDialog openFileDialog(this, _("Open Pattern file"), "", "",
+        "Pattern files (*.txt;*.pattern)|*.txt;*.pattern|All files (*.*)|*.*",
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (openFileDialog.ShowModal() == wxID_CANCEL)
+        return;
+
+    ImportPatternFromFile(openFileDialog.GetPath());
+}
+
+// Handles menu command to save the current universe state to a file
+void DrawingPanel::OnSaveUniverse(wxCommandEvent& event)
+{
+    wxFileDialog saveFileDialog(this, _("Save Universe file"), "", "",
+        "Universe files (*.uni)|*.uni|All files (*.*)|*.*",
+        wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
+
+    if (saveFileDialog.ShowModal() == wxID_CANCEL)
+        return; // User cancelled save
+
+    SaveUniverse(saveFileDialog.GetPath());
+}
+
+// Saves the current grid to the specified file path
+bool DrawingPanel::SaveUniverse(const wxString& filePath)
+{
+    std::ofstream file(filePath.ToStdString(), std::ios::binary);
+    if (!file.is_open())
+        return false;
+
+    int n = settings.gridSize;
+    file.write(reinterpret_cast<const char*>(&n), sizeof(n));
+
+    for (int row = 0; row < n; ++row)
+    {
+        for (int col = 0; col < n; ++col)
+        {
+            char cell = grid[row][col] ? 1 : 0;
+            file.write(&cell, sizeof(cell));
+        }
+    }
+    file.close();
+    return true;
+}
+
+
+   

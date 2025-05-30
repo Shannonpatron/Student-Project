@@ -1,4 +1,3 @@
-// SettingsDialog.cpp
 // Implements the settings dialog for Langton's Ant simulation.
 // Allows users to customize cell colors, grid size, and timer interval.
 // Updates the Settings struct when confirmed.
@@ -107,3 +106,5 @@ void SettingsDialog::OnCancelButtonClick(wxCommandEvent& WXUNUSED(event))
 {
     EndModal(wxID_CANCEL);
 }
+
+

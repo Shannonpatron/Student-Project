@@ -1,6 +1,4 @@
-// Implements the main application window functionality,
-// handling user interactions and driving the Langton's Ant simulation.
-// Manages toolbar, menu commands, timer events, and status updates.
+// Implements main application window functionality for Langton's Ant.
 
 #include "MainWindow.h"
 #include "SettingsDialog.h"
@@ -9,7 +7,7 @@
 #include "next.xpm"
 #include "trash.xpm"
 
-// IDs for toolbar buttons, timer, and menu items
+// IDs for controls and events
 enum
 {
     ID_Play = 1,
@@ -17,10 +15,14 @@ enum
     ID_Step,
     ID_Clear,
     ID_Timer,
-    ID_Settings
+    ID_Settings,
+    ID_ResetSettings,
+    ID_ImportPattern,  // new ID for Import Pattern
+    ID_ToggleHUD,      // new ID for Show HUD menu item
+    ID_SaveUniverse = wxID_HIGHEST + 1,
+    ID_LoadUniverse
 };
 
-// Event table linking events to handler functions
 wxBEGIN_EVENT_TABLE(MainWindow, wxFrame)
 EVT_MENU(ID_Play, MainWindow::OnPlay)
 EVT_MENU(ID_Pause, MainWindow::OnPause)
@@ -28,117 +30,188 @@ EVT_MENU(ID_Step, MainWindow::OnStep)
 EVT_MENU(ID_Clear, MainWindow::OnClear)
 EVT_TIMER(ID_Timer, MainWindow::OnTimer)
 EVT_MENU(ID_Settings, MainWindow::OnSettings)
+EVT_MENU(ID_ResetSettings, MainWindow::OnResetSettings)
+EVT_MENU(ID_ImportPattern, MainWindow::OnImportPattern)  // new event
+EVT_MENU(ID_ToggleHUD, MainWindow::OnToggleHUD)     
+// new event
 wxEND_EVENT_TABLE()
 
 MainWindow::MainWindow()
-    : wxFrame(nullptr, wxID_ANY, "Langton's Ant", wxDefaultPosition, wxSize(800, 800))
+    : wxFrame(nullptr, wxID_ANY, "Langton's Ant", wxDefaultPosition, wxSize(800, 800)),
+    generationCount(0)
 {
-    // Load saved simulation settings on startup
     settings.LoadSettings();
 
-    // Create timer for running the simulation automatically
     timer = new wxTimer(this, ID_Timer);
 
-    // Setup toolbar with play, pause, step, and clear buttons
+    // Setup toolbar
     toolBar = CreateToolBar();
-    toolBar->AddTool(ID_Play, "Play", wxBitmap(play_xpm), "Start the simulation");
-    toolBar->AddTool(ID_Pause, "Pause", wxBitmap(pause_xpm), "Pause the simulation");
-    toolBar->AddTool(ID_Step, "Step", wxBitmap(next_xpm), "Advance one step");
-    toolBar->AddTool(ID_Clear, "Clear", wxBitmap(trash_xpm), "Clear the grid");
+    toolBar->AddTool(ID_Play, "Play", wxBitmap(play_xpm), "Start Simulation");
+    toolBar->AddTool(ID_Pause, "Pause", wxBitmap(pause_xpm), "Pause Simulation");
+    toolBar->AddTool(ID_Step, "Step", wxBitmap(next_xpm), "Advance One Step");
+    toolBar->AddTool(ID_Clear, "Clear", wxBitmap(trash_xpm), "Clear Grid");
     toolBar->Realize();
     toolBar->SetSize(wxSize(800, 50));
 
-    // Create menu with settings option
+    // Setup menu
     wxMenuBar* menuBar = new wxMenuBar();
+
+    // File menu with Import Pattern
+    wxMenu* fileMenu = new wxMenu();
+    fileMenu->Append(ID_ImportPattern, "Import Pattern...\tCtrl+I", "Import a pattern file");
+    menuBar->Append(fileMenu, "File");
+
+    // Options menu with Settings and Reset Settings
     wxMenu* optionsMenu = new wxMenu();
     optionsMenu->Append(ID_Settings, "Settings");
+    optionsMenu->Append(ID_ResetSettings, "Reset Settings");
     menuBar->Append(optionsMenu, "Options");
+
+    // View menu with Show HUD option (checkable)
+    wxMenu* viewMenu = new wxMenu();
+    viewMenu->AppendCheckItem(ID_ToggleHUD, "Show HUD");
+    menuBar->Append(viewMenu, "View");
+
     SetMenuBar(menuBar);
 
-    // Create the drawing panel where the simulation runs
+    fileMenu->Append(ID_SaveUniverse, "Save Universe...\tCtrl+S");
+    fileMenu->Append(ID_LoadUniverse, "Load Universe...\tCtrl+O");
+
+    // Set initial check state for Show HUD menu item
+    menuBar->Check(ID_ToggleHUD, settings.ShowHUD);
+
+    // Create drawing panel for simulation
     drawingPanel = new DrawingPanel(this, settings);
 
-    // Create status bar with two sections
+    // Status bar
     CreateStatusBar(2);
-    SetStatusText("Generation: 0", 0);
+    UpdateStatusBar();
     SetStatusText("Ready", 1);
-
-    generationCount = 0;
 }
 
 MainWindow::~MainWindow()
 {
-    // Save settings before closing
     settings.SaveSettings();
     delete timer;
 }
 
-// Start the simulation timer
-void MainWindow::OnPlay(wxCommandEvent& event)
+void MainWindow::OnPlay(wxCommandEvent& /*event*/)
 {
     timer->Start(settings.intervalMs);
     SetStatusText("Simulation Running", 1);
 }
 
-// Stop the simulation timer
-void MainWindow::OnPause(wxCommandEvent& event)
+void MainWindow::OnPause(wxCommandEvent& /*event*/)
 {
     timer->Stop();
     SetStatusText("Simulation Paused", 1);
 }
 
-// Advance simulation by one step manually
-void MainWindow::OnStep(wxCommandEvent& event)
+void MainWindow::OnStep(wxCommandEvent& /*event*/)
 {
     drawingPanel->StepSimulation();
-    generationCount++;
-    SetStatusText("Generation: " + std::to_string(generationCount), 0);
+    ++generationCount;
+    UpdateStatusBar();
 }
 
-// Clear the grid and reset generation count
-void MainWindow::OnClear(wxCommandEvent& event)
+void MainWindow::OnClear(wxCommandEvent& /*event*/)
 {
     drawingPanel->ClearGrid();
     generationCount = 0;
-    SetStatusText("Generation: 0", 0);
+    UpdateStatusBar();
     SetStatusText("Ready", 1);
 }
 
-// Called on each timer tick to advance simulation automatically
-void MainWindow::OnTimer(wxTimerEvent& event)
+void MainWindow::OnTimer(wxTimerEvent& /*event*/)
 {
     drawingPanel->StepSimulation();
-    generationCount++;
-    SetStatusText("Generation: " + std::to_string(generationCount), 0);
+    ++generationCount;
+    UpdateStatusBar();
 }
 
-// Open the settings dialog to adjust simulation parameters
-void MainWindow::OnSettings(wxCommandEvent& WXUNUSED(event))
+void MainWindow::OnSettings(wxCommandEvent& /*event*/)
 {
-    // Reload current settings in case user canceled last time
     settings.LoadSettings();
 
     SettingsDialog dlg(this, wxID_ANY, "Settings", &settings);
-
     if (dlg.ShowModal() == wxID_OK)
     {
-        // If timer is running, restart it with new interval
         if (timer->IsRunning())
-        {
             timer->Start(settings.intervalMs);
-        }
 
-        // Apply settings to drawing panel and refresh display
         drawingPanel->UpdateSettings(settings);
         drawingPanel->Refresh();
 
-        // Save updated settings
         settings.SaveSettings();
+
+        // Update status bar in case ShowHUD changed
+        UpdateStatusBar();
+
+        // Update HUD menu check state
+        GetMenuBar()->Check(ID_ToggleHUD, settings.ShowHUD);
     }
 }
 
-// Update status bar with current generation count
+void MainWindow::OnResetSettings(wxCommandEvent& /*event*/)
+{
+    timer->Stop();
+    settings.ResetToDefaults();
+    settings.SaveSettings();
+
+    drawingPanel->UpdateSettings(settings);
+    drawingPanel->ClearGrid();
+
+    generationCount = 0;
+    UpdateStatusBar();
+    drawingPanel->Refresh();
+
+    // Update HUD menu check state
+    GetMenuBar()->Check(ID_ToggleHUD, settings.ShowHUD);
+
+    SetStatusText("Settings reset to default", 1);
+}
+
+void MainWindow::OnImportPattern(wxCommandEvent& /*event*/)
+{
+    wxFileDialog openFileDialog(this, _("Open pattern file"), "", "",
+        "Pattern files (*.txt;*.pat)|*.txt;*.pat|All files (*.*)|*.*",
+        wxFD_OPEN | wxFD_FILE_MUST_EXIST);
+
+    if (openFileDialog.ShowModal() == wxID_CANCEL)
+        return; // user cancelled
+
+    wxString path = openFileDialog.GetPath();
+
+    if (!drawingPanel->ImportPatternFromFile(path))
+    {
+        wxMessageBox("Failed to load pattern from file.", "Error", wxOK | wxICON_ERROR);
+    }
+}
+
+void MainWindow::OnToggleHUD(wxCommandEvent& /*event*/)
+{
+    // Toggle ShowHUD setting and save
+    settings.ShowHUD = !settings.ShowHUD;
+    settings.SaveSettings();
+
+    // Update menu check state to reflect new value
+    GetMenuBar()->Check(ID_ToggleHUD, settings.ShowHUD);
+
+    // Refresh drawing panel to show/hide HUD
+    drawingPanel->Refresh();
+
+    // Update status bar display
+    UpdateStatusBar();
+}
+
 void MainWindow::UpdateStatusBar()
 {
-    SetStatusText("Generation: " + std::to_string(generationCount), 0);
+    if (settings.ShowHUD)
+    {
+        SetStatusText("Generation: " + std::to_string(generationCount), 0);
+    }
+    else
+    {
+        SetStatusText("", 0);
+    }
 }

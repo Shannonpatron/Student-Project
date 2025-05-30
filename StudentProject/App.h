@@ -1,4 +1,4 @@
-// App.h – This file sets up the main application class and handles startup
+// This file sets up the main application class and handles startup
 
 #include "wx/wx.h"
 

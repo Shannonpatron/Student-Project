@@ -1,4 +1,4 @@
-// This is the starting point of the app. It creates and shows the main window.
+// App.cpp – This is the starting point of the app. It creates and shows the main window.
 
 #include "App.h"
 #include "MainWindow.h"

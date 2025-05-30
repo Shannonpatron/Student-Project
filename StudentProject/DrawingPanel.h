@@ -1,52 +1,61 @@
-// This file defines the custom panel where the grid and ant are drawn.
-// It handles drawing, simulation steps, and mouse interaction.
+// This header defines the DrawingPanel class, which handles rendering 
+// and interaction logic for the cellular automaton grid, including 
+// simulation steps, mouse input, neighbor counting, and HUD display. 
+// It also manages file import/export for universe and pattern data.
 
 #pragma once
 
-#include "wx/wx.h"
-#include "Settings.h"
+#include <wx/wx.h>
 #include <vector>
+#include "Settings.h"
+#include "LangtonsAnt.h"
+#include <wx/filedlg.h>
+#include <fstream>
 
-class LangtonsAnt;  // Forward declaration for the ant logic
+
+const int ID_SAVE_UNIVERSE = wxID_HIGHEST + 1;
+const int ID_IMPORT_PATTERN = wxID_HIGHEST + 2;
 
 class DrawingPanel : public wxPanel
 {
 public:
-    // Constructor – takes in settings and stores a copy
-    DrawingPanel(wxWindow* parent, const Settings& settings);
+    DrawingPanel(wxWindow* parent, const Settings& settingsRef);
+    ~DrawingPanel();
 
-    ~DrawingPanel();  // Cleans up the dynamically created ant
-
-    // Moves the simulation forward by one step
     void StepSimulation();
-
-    // Clears the grid and resets the simulation
     void ClearGrid();
-
-    // Updates the settings when user changes them
     void UpdateSettings(const Settings& newSettings);
-
-    // Updates the neighbor count for each cell
-    void UpdateNeighborCounts();
-
-    // Turns on/off the display of neighbor numbers
     void SetShowNeighborCount(bool show);
 
+    bool ImportPatternFromFile(const wxString& filename);
+
 private:
-    Settings settings;  // Local copy of the settings
-
-    std::vector<std::vector<bool>> grid;  // Stores the grid state (on/off cells)
-    std::vector<std::vector<int>> neighborCounts;  // Stores neighbor counts per cell
-
-    LangtonsAnt* ant = nullptr;  // Pointer to the ant object
-
-    bool showNeighborCount = false;  // Controls whether neighbor numbers are drawn
-
-    // Handles drawing the panel when refreshed
     void OnPaint(wxPaintEvent& event);
-
-    // Handles mouse clicks to toggle cells manually
     void OnMouseClick(wxMouseEvent& event);
+    void OnImportPattern(wxCommandEvent& event);
 
-    wxDECLARE_EVENT_TABLE();  // Required for custom event handling
+    void UpdateNeighborCounts();
+
+    void OnSaveUniverse(wxCommandEvent& event);
+    void OnLoadUniverse(wxCommandEvent& event);
+
+    bool SaveUniverse(const wxString& filename);
+    bool LoadUniverse(const wxString& filename);
+
+    // New helper to draw the HUD
+    void DrawHUD(wxPaintDC& dc);
+
+    Settings settings;
+    std::vector<std::vector<bool>> grid;
+    std::vector<std::vector<int>> neighborCounts;
+    LangtonsAnt* ant;
+    bool showNeighborCount;
+
+    wxDECLARE_EVENT_TABLE();
+
+    // Optional: prevent copying
+    DrawingPanel(const DrawingPanel&) = delete;
+    DrawingPanel& operator=(const DrawingPanel&) = delete;
+
+
 };
